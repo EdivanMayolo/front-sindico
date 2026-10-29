@@ -25,6 +25,12 @@ export default defineConfig(() => {
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
+      // Endereço da API. Padrão: localhost:3000. Para usar outra, iniciar com
+      // a variável API_URL (ex.: nos testes, uma API ligada ao banco de teste).
+      env: {
+        API_URL: process.env.API_URL || 'http://localhost:3000',
+      },
+
       vitePlugins: [
         [
           'vite-plugin-checker',

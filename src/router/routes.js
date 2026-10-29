@@ -11,7 +11,13 @@ const routes = [
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/IndexPage.vue') }],
+    children: [
+      { path: '', component: () => import('pages/IndexPage.vue') },
+      { path: 'pessoas', component: () => import('pages/PessoasPage.vue') },
+      { path: 'apartamentos', component: () => import('pages/ApartamentosPage.vue') },
+      // Parâmetro :id → this.$route.params.id na página (aula de Router)
+      { path: 'apartamentos/:id', component: () => import('pages/ApartamentoDetalhePage.vue') },
+    ],
   },
 
   // Always leave this as last one,

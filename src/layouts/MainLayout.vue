@@ -37,7 +37,14 @@
       <q-list>
         <q-item-label header>Menu</q-item-label>
 
-        <q-item v-for="item in menuVisivel" :key="item.to" clickable :to="item.to" exact>
+        <!-- Item destacado também nas telas "filhas" (ex.: /apartamentos/1 destaca Apartamentos) -->
+        <q-item
+          v-for="item in menuVisivel"
+          :key="item.to"
+          clickable
+          :to="item.to"
+          :active="estaAtivo(item)"
+        >
           <q-item-section avatar>
             <q-icon :name="item.icone" />
           </q-item-section>
@@ -59,7 +66,11 @@ import { useAuthStore } from 'src/stores/auth'
 
 // Itens do menu. "perfis" limita quem vê o item (sem "perfis" = todos).
 // Cada parte do sistema acrescenta os seus itens aqui.
-const MENU = [{ titulo: 'Início', icone: 'home', to: '/' }]
+const MENU = [
+  { titulo: 'Início', icone: 'home', to: '/' },
+  { titulo: 'Apartamentos', icone: 'apartment', to: '/apartamentos' },
+  { titulo: 'Pessoas', icone: 'people', to: '/pessoas' },
+]
 
 export default defineComponent({
   name: 'MainLayout',
@@ -80,6 +91,10 @@ export default defineComponent({
 
   methods: {
     ...mapActions(useAuthStore, { sairDaStore: 'sair' }),
+
+    estaAtivo(item) {
+      return item.to === '/' ? this.$route.path === '/' : this.$route.path.startsWith(item.to)
+    },
 
     sair() {
       this.sairDaStore()
