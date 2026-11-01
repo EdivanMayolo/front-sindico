@@ -6,20 +6,25 @@
 
         <q-toolbar-title>CondoSimples</q-toolbar-title>
 
-        <!-- No celular mostra só o ícone, para não apertar a barra -->
-        <q-btn flat no-caps icon="account_circle" :label="$q.screen.gt.xs ? usuario.nome : ''">
+        <!-- No celular mostra só o ícone, para não apertar a barra.
+             "usuario?." porque, ao clicar em Sair, o menu ainda se redesenha (fechando) sem usuário -->
+        <q-btn flat no-caps icon="account_circle" :label="$q.screen.gt.xs ? usuario?.nome : ''">
           <q-menu>
             <q-list>
               <q-item>
                 <q-item-section>
-                  <q-item-label>{{ usuario.nome }}</q-item-label>
-                  <q-item-label caption>{{ usuario.email }}</q-item-label>
-                  <q-item-label caption>
-                    Perfil: {{ isAdmin ? 'Administrador' : 'Consulta' }}
-                  </q-item-label>
+                  <q-item-label>{{ usuario?.nome }}</q-item-label>
+                  <q-item-label caption>{{ usuario?.email }}</q-item-label>
+                  <q-item-label caption>Perfil: {{ perfil(usuario?.perfil) }}</q-item-label>
                 </q-item-section>
               </q-item>
               <q-separator />
+              <q-item v-close-popup clickable @click="senhaAberta = true">
+                <q-item-section avatar>
+                  <q-icon name="key" />
+                </q-item-section>
+                <q-item-section>Trocar minha senha</q-item-section>
+              </q-item>
               <q-item clickable v-close-popup @click="sair">
                 <q-item-section avatar>
                   <q-icon name="logout" />
@@ -56,6 +61,8 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <SenhaForm v-model="senhaAberta" />
   </q-layout>
 </template>
 
@@ -63,6 +70,8 @@
 import { defineComponent } from 'vue'
 import { mapState, mapActions } from 'pinia'
 import { useAuthStore } from 'src/stores/auth'
+import SenhaForm from 'src/components/SenhaForm.vue'
+import { perfil } from 'src/utils/formatar'
 
 // Itens do menu. "perfis" limita quem vê o item (sem "perfis" = todos).
 // Cada parte do sistema acrescenta os seus itens aqui.
@@ -70,27 +79,35 @@ const MENU = [
   { titulo: 'Início', icone: 'home', to: '/' },
   { titulo: 'Apartamentos', icone: 'apartment', to: '/apartamentos' },
   { titulo: 'Pessoas', icone: 'people', to: '/pessoas' },
+  { titulo: 'Despesas', icone: 'receipt_long', to: '/despesas' },
+  { titulo: 'Leitura de gás', icone: 'local_fire_department', to: '/leituras-gas' },
+  { titulo: 'Usuários', icone: 'manage_accounts', to: '/usuarios', perfis: ['ADMIN'] },
 ]
 
 export default defineComponent({
   name: 'MainLayout',
 
+  components: { SenhaForm },
+
   data() {
     return {
       menuAberto: false,
+      senhaAberta: false,
     }
   },
 
   computed: {
-    ...mapState(useAuthStore, ['usuario', 'isAdmin']),
+    ...mapState(useAuthStore, ['usuario']),
 
     menuVisivel() {
-      return MENU.filter((item) => !item.perfis || item.perfis.includes(this.usuario.perfil))
+      return MENU.filter((item) => !item.perfis || item.perfis.includes(this.usuario?.perfil))
     },
   },
 
   methods: {
     ...mapActions(useAuthStore, { sairDaStore: 'sair' }),
+
+    perfil,
 
     estaAtivo(item) {
       return item.to === '/' ? this.$route.path === '/' : this.$route.path.startsWith(item.to)

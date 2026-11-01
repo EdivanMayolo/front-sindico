@@ -17,6 +17,13 @@ const routes = [
       { path: 'apartamentos', component: () => import('pages/ApartamentosPage.vue') },
       // Parâmetro :id → this.$route.params.id na página (aula de Router)
       { path: 'apartamentos/:id', component: () => import('pages/ApartamentoDetalhePage.vue') },
+      { path: 'despesas', component: () => import('pages/DespesasPage.vue') },
+      { path: 'leituras-gas', component: () => import('pages/LeituraGasPage.vue') },
+      {
+        path: 'usuarios',
+        component: () => import('pages/UsuariosPage.vue'),
+        meta: { perfis: ['ADMIN'] },
+      },
     ],
   },
 
