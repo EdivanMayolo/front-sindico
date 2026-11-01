@@ -1,6 +1,7 @@
 <template>
   <q-page padding>
-    <div class="text-h5">Olá, {{ usuario.nome }}!</div>
+    <!-- "usuario?." porque, ao clicar em Sair, a tela ainda se redesenha uma vez sem usuário -->
+    <div class="text-h5">Olá, {{ usuario?.nome }}!</div>
     <div class="text-subtitle1 text-grey-7 q-mb-md">Bem-vindo ao CondoSimples.</div>
 
     <!-- O painel com saldo, apartamentos e leitura de gás vem na parte 8 -->

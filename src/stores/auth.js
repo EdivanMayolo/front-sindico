@@ -36,6 +36,12 @@ export const useAuthStore = defineStore('auth', {
       LocalStorage.set('usuario', this.usuario)
     },
 
+    // O ADMIN alterou o próprio cadastro (nome/e-mail): atualiza a barra do topo
+    atualizarUsuario(dados) {
+      this.usuario = { ...this.usuario, nome: dados.nome, email: dados.email }
+      LocalStorage.set('usuario', this.usuario)
+    },
+
     sair() {
       this.token = null
       this.usuario = null
