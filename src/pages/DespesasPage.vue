@@ -139,7 +139,12 @@
           <!-- A API explica por que não há rateio (ex.: nenhum apartamento no mês) -->
           <div v-else-if="erroRateio" class="text-grey-7">{{ erroRateio }}</div>
           <template v-else-if="rateio">
-            <div class="text-caption text-grey-7 q-mb-sm">
+            <!-- Já faturada: o texto não pode dizer que "vai entrar" (os valores estão nas faturas) -->
+            <div v-if="despesa.em_uso" class="text-caption text-grey-7 q-mb-sm">
+              Divisão igual entre os {{ rateio.quantidade_apartamentos }} apartamentos, já lançada
+              nas faturas. Os valores de cada apartamento estão em Faturas.
+            </div>
+            <div v-else class="text-caption text-grey-7 q-mb-sm">
               Prévia: divisão igual entre os {{ rateio.quantidade_apartamentos }} apartamentos. Os
               valores entram na fatura de {{ mesAno(rateio.mes_cobranca, rateio.ano_cobranca) }}.
             </div>
@@ -325,7 +330,10 @@ export default defineComponent({
     async carregar() {
       this.carregando = true
       try {
-        const response = await DespesaService.listar({ mes: this.mes, ano: this.ano })
+        const { mes, ano } = this
+        const response = await DespesaService.listar({ mes, ano })
+        // Cliques rápidos em ◀ ▶: ignora a resposta de um mês que já saiu da tela
+        if (mes !== this.mes || ano !== this.ano) return
         this.despesas = response.data.data
       } catch (err) {
         this.$q.notify({ type: 'negative', message: mensagemErro(err) })

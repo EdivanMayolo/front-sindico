@@ -277,7 +277,13 @@ export default defineComponent({
   async mounted() {
     window.addEventListener('beforeunload', this.avisarAoFechar)
     await this.carregarContas()
-    if (this.maisRecente) this.irParaMaisRecente()
+    // Mês no endereço (?mes=10&ano=2026): o atalho da tela inicial abre direto no mês da conta que falta
+    const { mes, ano } = this.$route.query
+    if (mes && ano) {
+      this.mes = Number(mes)
+      this.ano = Number(ano)
+      this.carregarMes()
+    } else if (this.maisRecente) this.irParaMaisRecente()
     else this.carregarMes()
   },
 
@@ -352,7 +358,10 @@ export default defineComponent({
     async carregarPainel() {
       this.carregando = true
       try {
-        const response = await LeituraGasService.painel(this.idDespesa)
+        const id = this.idDespesa
+        const response = await LeituraGasService.painel(id)
+        // Cliques rápidos em ◀ ▶: ignora o painel de uma conta que já saiu da tela
+        if (id !== this.idDespesa) return
         this.painel = response.data.data
       } catch (err) {
         this.$q.notify({ type: 'negative', message: mensagemErro(err) })
