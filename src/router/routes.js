@@ -19,6 +19,11 @@ const routes = [
       { path: 'apartamentos/:id', component: () => import('pages/ApartamentoDetalhePage.vue') },
       { path: 'despesas', component: () => import('pages/DespesasPage.vue') },
       { path: 'leituras-gas', component: () => import('pages/LeituraGasPage.vue') },
+      { path: 'faturas', component: () => import('pages/FaturasPage.vue') },
+      // Esboço da fatura, com Imprimir
+      { path: 'faturas/:id', component: () => import('pages/FaturaPage.vue') },
+      { path: 'receitas', component: () => import('pages/ReceitasPage.vue') },
+      { path: 'financeiro', component: () => import('pages/FinanceiroPage.vue') },
       {
         path: 'usuarios',
         component: () => import('pages/UsuariosPage.vue'),

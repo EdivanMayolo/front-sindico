@@ -30,6 +30,9 @@ export const m3 = (valor) =>
 // 7 e 2026 → "07/2026"
 export const mesAno = (mes, ano) => `${String(mes).padStart(2, '0')}/${ano}`
 
+// Mês em que a fatura é cobrada: o seguinte ao dos gastos (10/2026 → "11/2026"; 12/2026 → "01/2027")
+export const mesCobranca = (mes, ano) => (mes === 12 ? mesAno(1, ano + 1) : mesAno(mes + 1, ano))
+
 // Despesa com valor_m3 é a conta de gás (decisão 27A: o síndico vê "Gás", não "Variável")
 const TIPOS_DESPESA = { FIXA: 'Fixa', VARIAVEL: 'Variável', OUTROS: 'Outros' }
 export const tipoDespesa = (despesa) =>

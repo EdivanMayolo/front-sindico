@@ -5,9 +5,7 @@
       <q-btn flat round icon="arrow_back" to="/apartamentos">
         <q-tooltip>Voltar para a lista</q-tooltip>
       </q-btn>
-      <div v-if="apartamento" class="text-h5 q-ml-sm">
-        Apartamento {{ nomeApto(apartamento) }}
-      </div>
+      <div v-if="apartamento" class="text-h5 q-ml-sm">Apartamento {{ nomeApto(apartamento) }}</div>
       <q-badge
         v-if="apartamento"
         class="q-ml-md"
@@ -110,11 +108,7 @@
           </q-list>
 
           <!-- Histórico (RN08): vínculos encerrados continuam guardados -->
-          <q-expansion-item
-            icon="history"
-            label="Vínculos encerrados"
-            @show="carregarHistorico"
-          >
+          <q-expansion-item icon="history" label="Vínculos encerrados" @show="carregarHistorico">
             <q-list separator>
               <q-item v-if="!historico.length">
                 <q-item-section class="text-grey-7">Nenhum vínculo encerrado.</q-item-section>
@@ -130,6 +124,40 @@
               </q-item>
             </q-list>
           </q-expansion-item>
+        </q-card>
+      </div>
+
+      <!-- Faturas do apartamento, mês a mês (RF17 / 56A); o clique abre o esboço -->
+      <div class="col-12">
+        <q-card flat bordered>
+          <q-card-section>
+            <div class="text-subtitle1">Faturas</div>
+          </q-card-section>
+          <q-list separator>
+            <q-item v-if="!faturas.length">
+              <q-item-section class="text-grey-7">Nenhuma fatura gerada.</q-item-section>
+            </q-item>
+            <q-item
+              v-for="f in faturas"
+              :key="f.id_fatura"
+              clickable
+              :to="`/faturas/${f.id_fatura}`"
+            >
+              <q-item-section avatar><q-icon name="request_quote" /></q-item-section>
+              <q-item-section>
+                <q-item-label
+                  >Referente a {{ mesAno(f.mes_referencia, f.ano_referencia) }}</q-item-label
+                >
+                <q-item-label caption>
+                  Cobrança em {{ mesCobranca(f.mes_referencia, f.ano_referencia) }} ·
+                  {{ f.quantidade_itens }} itens
+                </q-item-label>
+              </q-item-section>
+              <q-item-section side class="text-weight-bold">
+                {{ dinheiro(f.valor_total) }}
+              </q-item-section>
+            </q-item>
+          </q-list>
         </q-card>
       </div>
     </div>
@@ -178,11 +206,12 @@ import { mapState } from 'pinia'
 import { useAuthStore } from 'src/stores/auth'
 import ApartamentoService from 'src/services/ApartamentoService'
 import VinculoService from 'src/services/VinculoService'
+import FaturaService from 'src/services/FaturaService'
 import ApartamentoForm from 'src/components/ApartamentoForm.vue'
 import VinculoForm from 'src/components/VinculoForm.vue'
 import DataInput from 'src/components/DataInput.vue'
 import mensagemErro from 'src/utils/mensagemErro'
-import { dataBr, nomeApto, tipoVinculo } from 'src/utils/formatar'
+import { dataBr, dinheiro, mesAno, mesCobranca, nomeApto, tipoVinculo } from 'src/utils/formatar'
 
 export default defineComponent({
   name: 'ApartamentoDetalhePage',
@@ -193,6 +222,7 @@ export default defineComponent({
     return {
       apartamento: null,
       historico: [],
+      faturas: [],
       carregando: false,
       formApto: false,
       formVinculo: false,
@@ -215,6 +245,9 @@ export default defineComponent({
 
   methods: {
     dataBr,
+    dinheiro,
+    mesAno,
+    mesCobranca,
     nomeApto,
     tipoVinculo,
 
@@ -224,6 +257,7 @@ export default defineComponent({
         const response = await ApartamentoService.buscarPorId(this.$route.params.id)
         this.apartamento = response.data.data
         this.carregarHistorico()
+        this.carregarFaturas()
       } catch (err) {
         this.$q.notify({ type: 'negative', message: mensagemErro(err) })
         if (err?.status === 404) this.$router.push('/apartamentos')
@@ -239,6 +273,16 @@ export default defineComponent({
           ativo: false,
         })
         this.historico = response.data.data
+      } catch (err) {
+        this.$q.notify({ type: 'negative', message: mensagemErro(err) })
+      }
+    },
+
+    // Da mais recente para a mais antiga (ordem da API); as canceladas não valem
+    async carregarFaturas() {
+      try {
+        const response = await FaturaService.listar({ id_apartamento: this.$route.params.id })
+        this.faturas = response.data.data.filter((f) => f.status !== 'CANCELADA')
       } catch (err) {
         this.$q.notify({ type: 'negative', message: mensagemErro(err) })
       }

@@ -1,6 +1,8 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="bg-grey-1">
-    <q-header elevated>
+    <!-- Barra e menu não saem no papel (print-hide). Ao imprimir, os dois também se fecham,
+         para a página não ficar com o espaço deles em branco (imprimindo). -->
+    <q-header elevated class="print-hide" :model-value="!imprimindo">
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="menuAberto = !menuAberto" />
 
@@ -38,7 +40,7 @@
     </q-header>
 
     <!-- Menu lateral: fixo no computador e no tablet deitado; botão ☰ no celular (RNF02) -->
-    <q-drawer v-model="menuAberto" show-if-above bordered>
+    <q-drawer v-model="menuAberto" show-if-above bordered class="print-hide">
       <q-list>
         <q-item-label header>Menu</q-item-label>
 
@@ -81,6 +83,9 @@ const MENU = [
   { titulo: 'Pessoas', icone: 'people', to: '/pessoas' },
   { titulo: 'Despesas', icone: 'receipt_long', to: '/despesas' },
   { titulo: 'Leitura de gás', icone: 'local_fire_department', to: '/leituras-gas' },
+  { titulo: 'Faturas', icone: 'request_quote', to: '/faturas' },
+  { titulo: 'Receitas', icone: 'savings', to: '/receitas' },
+  { titulo: 'Financeiro', icone: 'account_balance', to: '/financeiro' },
   { titulo: 'Usuários', icone: 'manage_accounts', to: '/usuarios', perfis: ['ADMIN'] },
 ]
 
@@ -93,6 +98,8 @@ export default defineComponent({
     return {
       menuAberto: false,
       senhaAberta: false,
+      imprimindo: false,
+      menuAntesDeImprimir: false,
     }
   },
 
@@ -104,10 +111,32 @@ export default defineComponent({
     },
   },
 
+  // Impressão (esboço da fatura): pelo botão Imprimir ou pelo Ctrl+P
+  mounted() {
+    window.addEventListener('beforeprint', this.antesDeImprimir)
+    window.addEventListener('afterprint', this.depoisDeImprimir)
+  },
+
+  beforeUnmount() {
+    window.removeEventListener('beforeprint', this.antesDeImprimir)
+    window.removeEventListener('afterprint', this.depoisDeImprimir)
+  },
+
   methods: {
     ...mapActions(useAuthStore, { sairDaStore: 'sair' }),
 
     perfil,
+
+    antesDeImprimir() {
+      this.menuAntesDeImprimir = this.menuAberto
+      this.menuAberto = false
+      this.imprimindo = true
+    },
+
+    depoisDeImprimir() {
+      this.menuAberto = this.menuAntesDeImprimir
+      this.imprimindo = false
+    },
 
     estaAtivo(item) {
       return item.to === '/' ? this.$route.path === '/' : this.$route.path.startsWith(item.to)
