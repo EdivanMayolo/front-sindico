@@ -1,5 +1,5 @@
 <template>
-  <q-page padding>
+  <q-page padding class="column">
     <!-- "usuario?." porque, ao clicar em Sair, a tela ainda se redesenha uma vez sem usuário -->
     <div class="text-h5">Olá, {{ usuario?.nome }}!</div>
     <div class="text-subtitle1 text-grey-7 q-mb-md">Bem-vindo ao CondoSimples.</div>
@@ -34,6 +34,16 @@
             />
           </q-card-actions>
         </q-card>
+      </div>
+    </div>
+
+    <!-- Marca do sistema (a mesma do login) como fundo, no espaço livre abaixo dos cartões.
+         Cinza claro para não competir com o painel; escondida no celular (gt-xs). -->
+    <div class="col flex flex-center gt-xs">
+      <div class="text-center text-grey-4">
+        <q-icon name="apartment" size="160px" />
+        <div class="text-h3">CondoSimples</div>
+        <div class="text-h6">Autogestão condominial</div>
       </div>
     </div>
   </q-page>

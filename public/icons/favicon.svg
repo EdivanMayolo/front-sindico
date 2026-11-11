@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Ícone da aba: o prédio (ícone "apartment" do Material Icons) em branco sobre o azul do sistema -->
+  <rect width="24" height="24" rx="5" fill="#1976D2" />
+  <path fill="#FFFFFF" transform="translate(2.4 2.4) scale(0.8)" d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z" />
+</svg>

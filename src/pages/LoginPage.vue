@@ -1,7 +1,7 @@
 <template>
   <q-layout>
     <q-page-container>
-      <q-page class="row items-center justify-center bg-grey-2 q-pa-md">
+      <q-page class="row items-center justify-center bg-blue-1 q-pa-md">
         <q-card class="col-12 col-sm-8 col-md-4">
           <q-card-section class="text-center">
             <q-icon name="apartment" size="56px" color="primary" />
