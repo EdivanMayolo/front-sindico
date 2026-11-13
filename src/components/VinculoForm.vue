@@ -37,12 +37,11 @@
             </q-item-section>
           </q-item>
 
-          <div>
-            <q-toggle v-model="form.reside" label="Mora no apartamento" color="positive" />
-            <div class="text-caption text-grey-7">
-              Marque se esta pessoa é moradora do apartamento.
-            </div>
+          <!-- O inquilino sempre mora no apartamento (regra da API): só o proprietário escolhe -->
+          <div v-if="ehInquilino" class="text-caption text-grey-7">
+            O inquilino sempre mora no apartamento.
           </div>
+          <q-toggle v-else v-model="form.reside" label="Mora no apartamento" color="positive" />
 
           <DataInput
             v-model="form.data_inicio"
@@ -93,6 +92,12 @@ export default defineComponent({
     }
   },
 
+  computed: {
+    ehInquilino() {
+      return (this.vinculo?.tipo_vinculo || this.form.tipo_vinculo) === 'INQUILINO'
+    },
+  },
+
   methods: {
     tipoVinculo,
 
@@ -108,16 +113,26 @@ export default defineComponent({
 
     async salvar() {
       this.salvando = true
+      // Inquilino: sempre morador
+      const reside = this.ehInquilino ? true : this.form.reside
       try {
+        let mensagem = 'Vínculo salvo.'
         if (this.vinculo) {
           await VinculoService.alterar(this.vinculo.id_vinculo, {
-            reside: this.form.reside,
+            reside,
             data_inicio: this.form.data_inicio,
           })
         } else {
-          await VinculoService.criar({ ...this.form, id_apartamento: this.idApartamento })
+          const response = await VinculoService.criar({
+            ...this.form,
+            reside,
+            id_apartamento: this.idApartamento,
+          })
+          // Troca de proprietário: avisa quem saiu
+          const anterior = response.data.data.proprietario_encerrado
+          if (anterior) mensagem = `Vínculo salvo. ${anterior} deixou de ser o proprietário.`
         }
-        this.$q.notify({ type: 'positive', message: 'Vínculo salvo.' })
+        this.$q.notify({ type: 'positive', message: mensagem })
         this.$emit('salvo')
         this.$emit('update:modelValue', false)
       } catch (err) {
