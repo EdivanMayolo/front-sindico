@@ -43,31 +43,51 @@
 
         <q-separator />
 
-        <q-list dense class="q-py-sm">
-          <q-item>
-            <q-item-section avatar><q-icon name="apartment" /></q-item-section>
-            <q-item-section class="text-subtitle1">
-              Apartamento {{ nomeApto(fatura) }}
-            </q-item-section>
-          </q-item>
+        <!-- Dados do documento, como num boleto: número, emissão, vencimento e valor -->
+        <q-card-section>
+          <div class="row q-col-gutter-sm">
+            <div v-for="campo in camposDocumento" :key="campo.rotulo" class="col-6 col-sm-3">
+              <q-card flat bordered>
+                <q-card-section class="q-pa-sm">
+                  <div class="text-caption text-grey-7">{{ campo.rotulo }}</div>
+                  <div :class="['text-subtitle1', { 'text-weight-bold': campo.destaque }]">
+                    {{ campo.valor }}
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
+        </q-card-section>
+
+        <!-- Pagador (5A): o inquilino ativo, se houver; senão o proprietário -->
+        <q-card-section class="q-pt-none">
+          <q-card flat bordered>
+            <q-card-section class="q-pa-sm">
+              <div class="text-caption text-grey-7">
+                Pagador<template v-if="fatura.pagador">
+                  ({{ tipoVinculo(fatura.pagador.tipo_vinculo) }})</template
+                >
+              </div>
+              <template v-if="fatura.pagador">
+                <div class="text-subtitle1">{{ fatura.pagador.nome }}</div>
+                <div>
+                  CPF {{ cpf(fatura.pagador.cpf) }} · Apartamento {{ nomeApto(fatura) }}
+                </div>
+                <div v-if="fatura.pagador.endereco" class="text-grey-8">
+                  {{ fatura.pagador.endereco }}
+                </div>
+              </template>
+              <div v-else>Apartamento {{ nomeApto(fatura) }} — nenhum vínculo ativo</div>
+            </q-card-section>
+          </q-card>
           <!-- Nomes dos vínculos ativos de hoje -->
-          <q-item v-if="apartamento">
-            <q-item-section avatar><q-icon name="vpn_key" /></q-item-section>
-            <q-item-section>
-              <q-item-label caption>{{
-                plural(proprietarios, 'Proprietário', 'Proprietários')
-              }}</q-item-label>
-              <q-item-label>{{ proprietarios.join(', ') || '—' }}</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item v-if="apartamento">
-            <q-item-section avatar><q-icon name="person" /></q-item-section>
-            <q-item-section>
-              <q-item-label caption>{{ plural(moradores, 'Morador', 'Moradores') }}</q-item-label>
-              <q-item-label>{{ moradores.join(', ') || 'Nenhum morador cadastrado' }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
+          <div v-if="apartamento" class="text-caption text-grey-8 q-mt-sm">
+            {{ plural(proprietarios, 'Proprietário', 'Proprietários') }}:
+            {{ proprietarios.join(', ') || '—' }} ·
+            {{ plural(moradores, 'Morador', 'Moradores') }}:
+            {{ moradores.join(', ') || 'nenhum cadastrado' }}
+          </div>
+        </q-card-section>
 
         <q-separator />
 
@@ -126,6 +146,21 @@
             class="q-mt-sm print-hide"
             @click="itemAberto = true"
           />
+
+          <!-- Instruções de atraso (4A): só informação, o sistema não cobra o atraso -->
+          <q-card flat bordered class="q-mt-md">
+            <q-card-section class="q-pa-sm">
+              <div class="text-caption text-grey-7">Instruções</div>
+              <div>
+                Após o vencimento ({{ dataBr(fatura.data_vencimento) }}), cobrar multa de
+                {{ fatura.cobranca.multa_percentual }}% ({{ dinheiro(fatura.cobranca.multa_valor) }})
+                e juros de {{ fatura.cobranca.juros_mes_percentual }}% ao mês ({{
+                  dinheiro(fatura.cobranca.juros_dia_valor)
+                }}
+                por dia de atraso).
+              </div>
+            </q-card-section>
+          </q-card>
         </q-card-section>
 
         <q-card-section class="text-caption text-grey-7">
@@ -147,7 +182,7 @@ import FaturaService from 'src/services/FaturaService'
 import ApartamentoService from 'src/services/ApartamentoService'
 import ItemFaturaForm from 'src/components/ItemFaturaForm.vue'
 import mensagemErro from 'src/utils/mensagemErro'
-import { dataBr, dinheiro, mesAno, mesCobranca, nomeApto } from 'src/utils/formatar'
+import { cpf, dataBr, dinheiro, mesAno, mesCobranca, nomeApto, tipoVinculo } from 'src/utils/formatar'
 
 export default defineComponent({
   name: 'FaturaPage',
@@ -170,6 +205,16 @@ export default defineComponent({
     podeAlterar() {
       return this.isAdmin && this.fatura?.status === 'ABERTA'
     },
+
+    camposDocumento() {
+      return [
+        { rotulo: 'Nº do documento', valor: this.fatura.numero_documento },
+        { rotulo: 'Data de emissão', valor: dataBr(this.fatura.data_geracao) },
+        { rotulo: 'Vencimento', valor: dataBr(this.fatura.data_vencimento), destaque: true },
+        { rotulo: 'Valor do documento', valor: dinheiro(this.fatura.valor_total), destaque: true },
+      ]
+    },
+
     proprietarios() {
       return this.apartamento.vinculos
         .filter((v) => v.tipo_vinculo === 'PROPRIETARIO')
@@ -187,11 +232,13 @@ export default defineComponent({
   },
 
   methods: {
+    cpf,
     dataBr,
     dinheiro,
     mesAno,
     mesCobranca,
     nomeApto,
+    tipoVinculo,
 
     // "Proprietário" ou "Proprietários", conforme a quantidade de nomes
     plural(nomes, singular, plural) {
