@@ -39,14 +39,18 @@
           <div class="text-grey-7">
             Cadastre a conta (valor e preço do m³) para lançar as leituras.
           </div>
-          <q-btn
-            class="q-mt-md"
-            color="primary"
-            icon="add"
-            label="Cadastrar conta de gás"
-            unelevated
-            @click="despesaFormAberto = true"
-          />
+          <!-- Mês com faturas geradas não recebe despesa: botão desabilitado -->
+          <div class="inline-block q-mt-md">
+            <q-btn
+              color="primary"
+              icon="add"
+              label="Cadastrar conta de gás"
+              unelevated
+              :disable="mesFechado"
+              @click="despesaFormAberto = true"
+            />
+            <q-tooltip v-if="mesFechado">Mês fechado: as faturas já foram geradas</q-tooltip>
+          </div>
         </template>
       </q-card-section>
     </q-card>
@@ -173,6 +177,7 @@
     <DespesaForm
       v-model="despesaFormAberto"
       :data-padrao="dataPadrao"
+      :data-minima="dataMinima"
       tipo-padrao="GAS"
       @salvo="contaCadastrada"
     />
@@ -189,6 +194,7 @@ import LeituraGasService from 'src/services/LeituraGasService'
 import LeituraForm from 'src/components/LeituraForm.vue'
 import DespesaForm from 'src/components/DespesaForm.vue'
 import mensagemErro from 'src/utils/mensagemErro'
+import { mesFechado, primeiroDiaAberto, ultimoMesGerado } from 'src/utils/mesFechado'
 import { dataBr, dinheiro, m3, nomeApto } from 'src/utils/formatar'
 
 // Situação de cada apartamento (vem do painel da API), sempre com a mesma cor e ícone
@@ -221,6 +227,7 @@ export default defineComponent({
       leituraAberta: false,
       apartamento: null,
       despesaFormAberto: false,
+      ultimoGerado: null,
     }
   },
 
@@ -258,6 +265,14 @@ export default defineComponent({
         : 0
     },
 
+    mesFechado() {
+      return mesFechado(this.primeiroDia, this.ultimoGerado)
+    },
+
+    dataMinima() {
+      return primeiroDiaAberto(this.ultimoGerado)
+    },
+
     // Conta de gás nova: sugere o último dia do mês aberto (36A)
     dataPadrao() {
       return date.formatDate(date.endOfDate(this.primeiroDia, 'month'), 'YYYY-MM-DD')
@@ -276,6 +291,9 @@ export default defineComponent({
 
   async mounted() {
     window.addEventListener('beforeunload', this.avisarAoFechar)
+    ultimoMesGerado()
+      .then((ultimo) => (this.ultimoGerado = ultimo))
+      .catch((err) => this.$q.notify({ type: 'negative', message: mensagemErro(err) }))
     await this.carregarContas()
     // Mês no endereço (?mes=10&ano=2026): o atalho da tela inicial abre direto no mês da conta que falta
     const { mes, ano } = this.$route.query

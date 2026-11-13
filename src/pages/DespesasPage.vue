@@ -4,14 +4,19 @@
     <div class="row items-center q-mb-md">
       <div class="text-h5">Despesas</div>
       <q-space />
-      <q-btn
-        v-if="isAdmin"
-        color="primary"
-        icon="add"
-        label="Nova despesa"
-        unelevated
-        @click="abrirForm(null)"
-      />
+      <!-- Mês com faturas geradas não recebe despesa: botão desabilitado (o tooltip fica no div,
+           porque botão desabilitado não mostra tooltip) -->
+      <div v-if="isAdmin">
+        <q-btn
+          color="primary"
+          icon="add"
+          label="Nova despesa"
+          unelevated
+          :disable="mesFechado"
+          @click="abrirForm(null)"
+        />
+        <q-tooltip v-if="mesFechado">Mês fechado: as faturas já foram geradas</q-tooltip>
+      </div>
     </div>
 
     <!-- A lista é por mês de referência (26A), com o total do mês (32A) -->
@@ -183,6 +188,7 @@
       v-model="formAberto"
       :despesa="despesaEditada"
       :data-padrao="dataPadrao"
+      :data-minima="dataMinima"
       @salvo="salvo"
     />
   </q-page>
@@ -196,6 +202,7 @@ import { useAuthStore } from 'src/stores/auth'
 import DespesaService from 'src/services/DespesaService'
 import DespesaForm from 'src/components/DespesaForm.vue'
 import mensagemErro from 'src/utils/mensagemErro'
+import { mesFechado, primeiroDiaAberto, ultimoMesGerado } from 'src/utils/mesFechado'
 import { dataBr, dinheiro, mesAno, nomeApto, tipoDespesa } from 'src/utils/formatar'
 
 // Mesma cor para o mesmo tipo em todas as telas (consistência)
@@ -221,6 +228,7 @@ export default defineComponent({
       carregandoRateio: false,
       formAberto: false,
       despesaEditada: null,
+      ultimoGerado: null,
       // Só as colunas essenciais; o resto fica no detalhe
       colunas: [
         // O "format" é o texto do modo cartão (celular); na tabela aparecem os selos
@@ -282,6 +290,14 @@ export default defineComponent({
       return this.mes === hoje.getMonth() + 1 && this.ano === hoje.getFullYear()
     },
 
+    mesFechado() {
+      return mesFechado(this.primeiroDia, this.ultimoGerado)
+    },
+
+    dataMinima() {
+      return primeiroDiaAberto(this.ultimoGerado)
+    },
+
     // Despesa inativa não entra no saldo, então também não entra no total.
     // Soma em centavos para não aparecer 0,30000000004.
     totalMes() {
@@ -298,8 +314,13 @@ export default defineComponent({
     },
   },
 
-  mounted() {
+  async mounted() {
     this.carregar()
+    try {
+      this.ultimoGerado = await ultimoMesGerado()
+    } catch (err) {
+      this.$q.notify({ type: 'negative', message: mensagemErro(err) })
+    }
   },
 
   methods: {

@@ -117,6 +117,11 @@ export default defineComponent({
       const fechado = ultimoFechado()
       // Atalho para o mês da conta que falta (último mês fechado)
       const toFechado = `/leituras-gas?mes=${fechado.getMonth() + 1}&ano=${fechado.getFullYear()}`
+      // Faturas desse mês já geradas: ele não recebe mais conta, então não há atalho para cadastrar
+      const faturasGeradas = !!this.faturas?.length
+      if (!this.gas.painel && faturasGeradas) {
+        return { ...c, valor: 'Nenhuma conta', legenda: 'Nenhuma conta de gás cadastrada' }
+      }
       if (!this.gas.painel) {
         return {
           ...c,
@@ -139,7 +144,7 @@ export default defineComponent({
         }
       }
       // A última conta está concluída, mas é de antes do último mês fechado: falta a conta nova
-      if (this.gas.anoMes < date.formatDate(fechado, 'YYYY-MM')) {
+      if (this.gas.anoMes < date.formatDate(fechado, 'YYYY-MM') && !faturasGeradas) {
         const nome = date.formatDate(fechado, 'MMMM [de] YYYY').toLowerCase()
         return {
           ...c,

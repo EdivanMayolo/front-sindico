@@ -75,6 +75,7 @@
             label="Data de referência *"
             :hint="dicaCobranca"
             :disable="emUso"
+            :minimo="minimoData"
             obrigatorio
           />
 
@@ -127,6 +128,8 @@ export default defineComponent({
     dataPadrao: { type: String, default: null },
     // Tipo já marcado no cadastro novo (a tela de Leitura de gás abre com 'GAS')
     tipoPadrao: { type: String, default: 'FIXA' },
+    // Primeiro dia aberto (AAAA-MM-DD): os meses com faturas geradas não recebem despesa
+    dataMinima: { type: String, default: null },
   },
 
   emits: ['update:modelValue', 'salvo'],
@@ -151,6 +154,14 @@ export default defineComponent({
         months: 1,
       })
       return `Será cobrada na fatura de ${date.formatDate(cobranca, 'MM/YYYY')}`
+    },
+
+    // Data mínima do calendário: no cadastro novo, o primeiro dia aberto; na edição, só se a
+    // despesa já está num mês aberto (impede mudar a data para um mês fechado)
+    minimoData() {
+      if (!this.dataMinima) return null
+      if (!this.despesa) return this.dataMinima
+      return this.despesa.data_referencia >= this.dataMinima ? this.dataMinima : null
     },
   },
 
