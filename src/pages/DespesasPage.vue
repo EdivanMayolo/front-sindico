@@ -38,13 +38,18 @@
         @click="irParaMesAtual"
       />
       <q-space />
-      <div class="text-subtitle1">
-        Total do mês: <span class="text-weight-bold">{{ dinheiro(totalMes) }}</span>
+      <div class="text-right">
+        <div class="text-subtitle1">
+          Total do mês: <span class="text-weight-bold">{{ dinheiro(totalMes) }}</span>
+        </div>
+        <div v-if="totalPrevisto" class="text-caption text-grey-7">
+          Previstas: {{ dinheiro(totalPrevisto) }}
+        </div>
       </div>
     </div>
 
     <q-table
-      :rows="despesas"
+      :rows="linhas"
       :columns="colunas"
       row-key="id_despesa"
       :filter="busca"
@@ -69,6 +74,11 @@
         <q-td :props="props">
           {{ props.row.descricao }}
           <q-badge v-if="!props.row.ativo" color="grey" class="q-ml-sm">Inativa</q-badge>
+          <!-- Fixa do mês anterior que será lançada quando as faturas dele forem geradas -->
+          <q-badge v-if="props.row.prevista" outline color="grey-8" class="q-ml-sm">
+            Prevista
+            <q-tooltip>Será lançada quando as faturas de {{ mesAnterior }} forem geradas</q-tooltip>
+          </q-badge>
         </q-td>
       </template>
 
@@ -217,6 +227,7 @@ export default defineComponent({
     const hoje = new Date()
     return {
       despesas: [],
+      previstas: [],
       mes: hoje.getMonth() + 1,
       ano: hoje.getFullYear(),
       busca: '',
@@ -238,7 +249,7 @@ export default defineComponent({
           field: 'descricao',
           align: 'left',
           sortable: true,
-          format: (v, row) => (row.ativo ? v : `${v} (inativa)`),
+          format: (v, row) => (row.prevista ? `${v} (prevista)` : row.ativo ? v : `${v} (inativa)`),
         },
         {
           name: 'tipo',
@@ -298,6 +309,29 @@ export default defineComponent({
       return primeiroDiaAberto(this.ultimoGerado)
     },
 
+    // Despesas do mês + as fixas previstas (com selo; não abrem o detalhe)
+    linhas() {
+      return [
+        ...this.despesas,
+        ...this.previstas.map((p) => ({
+          ...p,
+          id_despesa: `prevista-${p.id_origem}`,
+          ativo: true,
+          prevista: true,
+        })),
+      ]
+    },
+
+    totalPrevisto() {
+      return this.previstas.reduce((soma, p) => soma + Math.round(p.valor_total * 100), 0) / 100
+    },
+
+    // "11/2026": o mês cujas faturas lançam as previstas
+    mesAnterior() {
+      const anterior = date.addToDate(this.primeiroDia, { months: -1 })
+      return mesAno(anterior.getMonth() + 1, anterior.getFullYear())
+    },
+
     // Despesa inativa não entra no saldo, então também não entra no total.
     // Soma em centavos para não aparecer 0,30000000004.
     totalMes() {
@@ -352,10 +386,14 @@ export default defineComponent({
       this.carregando = true
       try {
         const { mes, ano } = this
-        const response = await DespesaService.listar({ mes, ano })
+        const [response, previstas] = await Promise.all([
+          DespesaService.listar({ mes, ano }),
+          DespesaService.listarPrevistas({ mes, ano }),
+        ])
         // Cliques rápidos em ◀ ▶: ignora a resposta de um mês que já saiu da tela
         if (mes !== this.mes || ano !== this.ano) return
         this.despesas = response.data.data
+        this.previstas = previstas.data.data
       } catch (err) {
         this.$q.notify({ type: 'negative', message: mensagemErro(err) })
       } finally {
@@ -364,6 +402,14 @@ export default defineComponent({
     },
 
     async abrirDetalhe(row) {
+      // A prevista ainda não existe: o valor dela é o da despesa do mês anterior
+      if (row.prevista) {
+        this.$q.notify({
+          type: 'info',
+          message: `Despesa prevista: será lançada quando as faturas de ${this.mesAnterior} forem geradas. Para mudar o valor, altere a despesa de ${this.mesAnterior}.`,
+        })
+        return
+      }
       try {
         const response = await DespesaService.buscarPorId(row.id_despesa)
         this.despesa = response.data.data

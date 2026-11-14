@@ -243,8 +243,10 @@ export default defineComponent({
           title: 'Gerar faturas',
           message:
             `Gerar as faturas de ${this.nomeMesMinusculo} de todos os apartamentos? ` +
-            `Entram as despesas ainda não faturadas até ${dataBr(this.fimDoMes)}; ` +
-            'as lançadas depois entram no mês seguinte. A geração não pode ser desfeita.',
+            `Entram as despesas ainda não faturadas até ${dataBr(this.fimDoMes)}. ` +
+            `As despesas fixas do mês também serão lançadas em ${mesCobranca(this.mes, this.ano)}, ` +
+            'com o mesmo valor. Depois de gerar, o mês não recebe novas despesas, e a geração não ' +
+            'pode ser desfeita.',
           cancel: { flat: true, label: 'Cancelar' },
           ok: { color: 'primary', unelevated: true, label: 'Gerar faturas' },
           persistent: true,
@@ -256,7 +258,9 @@ export default defineComponent({
             this.faturas = response.data.data
             this.$q.notify({
               type: 'positive',
-              message: `${this.faturas.length} faturas de ${this.nomeMesMinusculo} geradas.`,
+              message:
+                `${this.faturas.length} faturas de ${this.nomeMesMinusculo} geradas. ` +
+                `As despesas fixas foram lançadas em ${mesCobranca(this.mes, this.ano)}.`,
             })
           } catch (err) {
             // Ex.: "Finalize as leituras de gás de 10/2026 antes de gerar as faturas"

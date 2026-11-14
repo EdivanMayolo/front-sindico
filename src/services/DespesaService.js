@@ -11,6 +11,16 @@ export default class DespesaService {
     })
   }
 
+  // Fixas previstas para o mês ({ mes, ano }): vêm do mês anterior, ainda não gravadas
+  static async listarPrevistas(params) {
+    return new Promise((res, rej) => {
+      api
+        .get('/despesas/previstas', { params })
+        .then((response) => res(response))
+        .catch((err) => rej(err.response))
+    })
+  }
+
   static async buscarPorId(id) {
     return new Promise((res, rej) => {
       api
