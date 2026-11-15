@@ -14,6 +14,8 @@
               <q-input
                 v-model="email"
                 type="email"
+                name="email"
+                autocomplete="username"
                 label="E-mail"
                 outlined
                 autofocus
@@ -28,6 +30,8 @@
               <q-input
                 v-model="senha"
                 :type="mostrarSenha ? 'text' : 'password'"
+                name="senha"
+                autocomplete="current-password"
                 label="Senha"
                 outlined
                 lazy-rules
@@ -89,12 +93,21 @@ export default defineComponent({
       this.carregando = true
       try {
         await this.entrarNaStore({ email: this.email, senha: this.senha })
+        this.oferecerSalvarSenha()
         this.$router.push('/')
       } catch (err) {
         this.$q.notify({ type: 'negative', message: mensagemErro(err) })
       } finally {
         this.carregando = false
       }
+    },
+
+    // Pede ao navegador (Chrome/Edge) para oferecer "Salvar senha" depois do login certo.
+    // Só existe em endereço seguro (localhost ou https); nos outros casos não faz nada.
+    oferecerSalvarSenha() {
+      if (!window.PasswordCredential) return
+      const credencial = new window.PasswordCredential({ id: this.email, password: this.senha })
+      navigator.credentials.store(credencial).catch(() => {})
     },
   },
 })
